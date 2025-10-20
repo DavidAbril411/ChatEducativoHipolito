@@ -1,0 +1,18 @@
+# Node / tooling
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Local secrets/config (do not commit)
+chatbot/config.local.js
+*.env
+.env*
+*.secret*
+*.key
+*.pem
+
+# OS/Editor
+.vscode/
+*.log
+Thumbs.db

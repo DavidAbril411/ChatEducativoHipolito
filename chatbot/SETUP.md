@@ -10,16 +10,26 @@
 4. **Click en "Create API Key"**
 5. **Copiá la key** (empieza con `gsk_...`)
 
-### Paso 2: Configurar el proyecto
+### Paso 2: Configurar el proyecto (sin commitear secretos)
 
-1. Abrí el archivo `config.js`
-2. Pegá tu API key:
-```javascript
-export const CONFIG = {
-	GROQ_API_KEY: 'gsk_TU_CLAVE_AQUI', // 👈 Pegá acá
-	MODELO: 'llama-3.1-8b-instant'
-};
-```
+1. Abrí el archivo `config.js` (ya está preparado para NO incluir claves en el repo)
+2. Cargá tu API key en tiempo de ejecución de una de estas formas:
+	 - En consola del navegador (para pruebas):
+		 ```js
+		 localStorage.setItem('GROQ_API_KEY', 'gsk_TU_CLAVE_AQUI')
+		 ```
+	 - O definiendo una global antes de cargar el chat:
+		 ```html
+		 <script>
+			 window.GROQ_API_KEY = 'gsk_TU_CLAVE_AQUI';
+		 </script>
+		 ```
+	 - O creando `chatbot/config.local.js` (ignorado por git) e inyectando:
+		 ```html
+		 <script>
+			 window.CONFIG_LOCAL = { GROQ_API_KEY: 'gsk_TU_CLAVE_AQUI' };
+		 </script>
+		 ```
 
 ### Paso 3: ¡Listo!
 
@@ -50,9 +60,9 @@ En `config.js` podés elegir:
 
 ## 🔒 Seguridad
 
-**⚠️ IMPORTANTE**: La API Key es privada. NO la subas a GitHub público.
+**⚠️ IMPORTANTE**: La API Key es privada. NO la subas a GitHub público. Este proyecto ya evita incluir la clave en el código fuente.
 
-Para producción, movela a variables de entorno o backend.
+Para producción, considerá mover llamadas a un backend propio o usar variables de entorno/secretos del entorno de despliegue.
 
 ---
 
