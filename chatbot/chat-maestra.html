@@ -3,18 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat Maestra Virtual</title>
+    <title>Chat Maestra Virtual</title>
     <link rel="stylesheet" href="chat-maestra.css" />
   </head>
   <body>
     <div class="chat-container">
       <section id="chat-widget" class="chat-widget" aria-label="Chat Educativo">
-        <div id="loader-overlay" class="loader-overlay visible" role="status" aria-live="polite">
+        <div
+          id="loader-overlay"
+          class="loader-overlay visible"
+          role="status"
+          aria-live="polite"
+        >
           <div class="loader-spinner" aria-hidden="true"></div>
           <p id="loader-text">Preparando a la maestra virtual...</p>
         </div>
         <div class="chat-header-mini">
-          <div class="titulo"><span class="icon" aria-hidden="true"></span><span>Maestra Virtual</span></div>
+          <div class="titulo">
+            <span class="icon" aria-hidden="true"></span
+            ><span>Maestra Virtual</span>
+          </div>
         </div>
         <div id="estado-conexion" class="estado-conexion">
           <span class="icono spinner" aria-hidden="true"></span>
@@ -22,27 +30,36 @@
         </div>
         <div id="chat-mensajes"></div>
         <div class="chat-input-bar">
-          <textarea id="chat-input" placeholder="Escribe tu mensaje…"></textarea>
+          <textarea
+            id="chat-input"
+            placeholder="Escribe tu mensaje…"
+          ></textarea>
           <button id="btn-enviar" aria-label="Enviar"></button>
         </div>
         <div class="controles-adicionales">
-          <button class="btn-control" id="btn-nueva-sesion" aria-label="Nueva conversación">Nueva conversación</button>
+          <button
+            class="btn-control"
+            id="btn-nueva-sesion"
+            aria-label="Nueva conversación"
+          >
+            Nueva conversación
+          </button>
         </div>
       </section>
     </div>
 
     <script type="module">
-      import { ChatEducativo } from './chat-educativo.js';
+      import { ChatEducativo } from "./chat-educativo.js";
 
-      document.addEventListener('DOMContentLoaded', async () => {
-        const widget = document.getElementById('chat-widget');
-        widget.classList.add('abierto');
+      document.addEventListener("DOMContentLoaded", async () => {
+        const widget = document.getElementById("chat-widget");
+        widget.classList.add("abierto");
 
         const chat = new ChatEducativo();
         try {
           await chat.inicializar();
         } catch (error) {
-          console.error('No se pudo iniciar el chat educativo', error);
+          console.error("No se pudo iniciar el chat educativo", error);
         }
       });
     </script>

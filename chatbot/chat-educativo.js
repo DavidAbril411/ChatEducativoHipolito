@@ -12,7 +12,7 @@ export class ChatEducativo {
 		this.indicadorEstado = null;
 		this.loaderOverlay = null;
 		this.loaderTexto = null;
-		
+
 		// Rate limiting: evitar spam
 		this.ultimoMensajeTimestamp = 0;
 		this.tiempoMinimoEntremensajes = 3000; // 3 segundos
@@ -89,9 +89,9 @@ export class ChatEducativo {
 
 		const iconoClase =
 			tipo === 'progreso' ? 'spinner' :
-			tipo === 'exito' ? 'check' :
-			tipo === 'error' ? 'error' :
-			'info';
+				tipo === 'exito' ? 'check' :
+					tipo === 'error' ? 'error' :
+						'info';
 
 		this.indicadorEstado.innerHTML = `
 			<span class="icono ${iconoClase}" aria-hidden="true"></span>
@@ -107,7 +107,7 @@ export class ChatEducativo {
 		// Rate limiting: verificar tiempo desde último mensaje
 		const ahora = Date.now();
 		const tiempoDesdeUltimoMensaje = ahora - this.ultimoMensajeTimestamp;
-		
+
 		if (tiempoDesdeUltimoMensaje < this.tiempoMinimoEntremensajes) {
 			const segundosRestantes = Math.ceil((this.tiempoMinimoEntremensajes - tiempoDesdeUltimoMensaje) / 1000);
 			this.actualizarEstadoConexion(`Esperá ${segundosRestantes} segundos antes de enviar otro mensaje`, 'info');
@@ -168,8 +168,8 @@ export class ChatEducativo {
 		this.esperandoRespuesta = true;
 		this.inputMensaje.disabled = true;
 		this.botonEnviar.disabled = true;
-	this.actualizarEstadoConexion('La maestra está pensando...', 'progreso');
-	this.mostrarLoader('La maestra está pensando...');
+		this.actualizarEstadoConexion('La maestra está pensando...', 'progreso');
+		this.mostrarLoader('La maestra está pensando...');
 
 		const evaluandoDiv = document.createElement('div');
 		evaluandoDiv.id = 'evaluando';
