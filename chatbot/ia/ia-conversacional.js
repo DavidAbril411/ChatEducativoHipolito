@@ -36,8 +36,11 @@ export class IAConversacional {
 		informar('Conectando con la profesora virtual... ✨');
 
 		try {
-			// Verificar que tenemos API key
-			if (!this.config.apiKey || this.config.apiKey === 'TU_API_KEY_AQUI') {
+			// Si usamos backend proxy, no necesitamos API key del cliente
+			const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
+			
+			// Verificar que tenemos API key SOLO si NO usamos backend
+			if (!useBackend && (!this.config.apiKey || this.config.apiKey === 'TU_API_KEY_AQUI')) {
 				throw new Error('⚠️ Falta configurar la API Key de Groq. Conseguila gratis en https://console.groq.com');
 			}
 
