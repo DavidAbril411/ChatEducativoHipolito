@@ -1,0 +1,17 @@
+:{$PORT} {
+	root * .
+	encode zstd gzip
+	file_server
+
+	# Security + CSP tuned for WebAssembly/Emscripten (Ren'Py web)
+	header {
+		# Allow Wasm compilation; include both wasm-unsafe-eval (Chromium) and unsafe-eval (wider)
+		Content-Security-Policy "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss: data:; frame-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		# Uncomment if you need SharedArrayBuffer (threads). Make sure all subresources send CORP/COEP.
+		# Cross-Origin-Opener-Policy "same-origin"
+		# Cross-Origin-Embedder-Policy "require-corp"
+	}
+}
