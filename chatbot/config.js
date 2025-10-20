@@ -34,5 +34,9 @@ export const CONFIG = {
 	GROQ_API_KEY: LOCAL_OVERRIDE.GROQ_API_KEY || keyFromWindow || keyFromStorage || 'TU_API_KEY_AQUI',
 
 	// Modelo Llama 4 Scout - Última generación, excelente en español
-	MODELO: LOCAL_OVERRIDE.MODELO || 'meta-llama/llama-4-scout-17b-16e-instruct'
+	MODELO: LOCAL_OVERRIDE.MODELO || 'meta-llama/llama-4-scout-17b-16e-instruct',
+
+	// Si definís un backend proxy (Node/Express en Railway), poné su URL base acá en runtime:
+	// window.BACKEND_URL = 'https://tu-backend.up.railway.app'
+	BACKEND_URL: typeof window !== 'undefined' && window.BACKEND_URL ? window.BACKEND_URL : (LOCAL_OVERRIDE.BACKEND_URL || '')
 };

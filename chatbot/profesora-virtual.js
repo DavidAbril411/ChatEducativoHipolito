@@ -78,7 +78,8 @@ export class ProfesoraVirtual {
 	constructor() {
 		this.ia = new IAConversacional({
 			apiKey: CONFIG.GROQ_API_KEY,
-			modelo: CONFIG.MODELO
+			modelo: CONFIG.MODELO,
+			backendUrl: CONFIG.BACKEND_URL
 		});
 		this.historial = [];
 		this.turno = 0;

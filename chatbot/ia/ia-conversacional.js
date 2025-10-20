@@ -54,12 +54,15 @@ export class IAConversacional {
 	}
 
 	async testConexion() {
-		const response = await fetch('https://api.groq.com/openai/v1/models', {
+		const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
+		const url = useBackend ? `${this.config.backendUrl.replace(/\/$/, '')}/api/health` : 'https://api.groq.com/openai/v1/models';
+		const headers = useBackend ? { 'Content-Type': 'application/json' } : {
+			'Authorization': `Bearer ${this.config.apiKey}`,
+			'Content-Type': 'application/json'
+		};
+		const response = await fetch(url, {
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${this.config.apiKey}`,
-				'Content-Type': 'application/json'
-			}
+			headers
 		});
 
 		if (!response.ok) {
@@ -79,12 +82,15 @@ export class IAConversacional {
 		console.log('Mensajes:', JSON.stringify(mensajes, null, 2));
 
 		try {
-			const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+			const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
+			const url = useBackend ? `${this.config.backendUrl.replace(/\/$/, '')}/api/chat` : 'https://api.groq.com/openai/v1/chat/completions';
+			const headers = useBackend ? { 'Content-Type': 'application/json' } : {
+				'Authorization': `Bearer ${this.config.apiKey}`,
+				'Content-Type': 'application/json'
+			};
+			const response = await fetch(url, {
 				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${this.config.apiKey}`,
-					'Content-Type': 'application/json'
-				},
+				headers,
 				body: JSON.stringify({
 					model: this.config.modelo,
 					messages: mensajes,
