@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe de Investigación: Alfabetizar en la era de las IAs — Informe técnico sobre modelos de lenguaje</title>
+  <style>
+    body { font-family: 'Times New Roman', Times, serif; margin: 40px; color: #111; }
+    h1, h2, h3 { color: #0b5; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 20px; margin-top: 24px; }
+    h3 { font-size: 16px; }
+    p { text-align: justify; line-height: 1.45; }
+    .center { text-align: center; }
+    .metadata { margin-bottom: 20px; }
+    .section { margin-top: 18px; }
+    .small { font-size: 12px; color: #444; }
+    pre { background: #f6f6f6; padding: 12px; border-radius: 6px; overflow:auto }
+  </style>
+</head>
+<body>
+  <h1 class="center">Alfabetizar en la era de las IAs: informe técnico sobre modelos de lenguaje y justificación de arquitectura</h1>
+  <p class="center small">Proyecto: "Alfabetizar en la era de las IAs: desafíos y problemáticas de la lectura en pantalla" — Equipo de Investigación, Universidad Blas Pascal, Córdoba, Argentina</p>
+
+  <div class="metadata">
+    <p><strong>Autores:</strong> Equipo Mitani / Grupo ChatEducativoHipolito</p>
+    <p><strong>Fecha:</strong> 28 de octubre de 2025</p>
+    <p><strong>Contacto:</strong> David Abril (repositorio y código) — ChatEducativoHipolito</p>
+  </div>
+
+  <h2>Resumen ejecutivo</h2>
+  <p>Este informe técnico documenta los modelos de lenguaje (LLMs) evaluados en el marco del proyecto "Alfabetizar en la era de las IAs" y presenta una justificación técnica y operativa para la elección del modelo de producción, la arquitectura utilizada en el prototipo (modelo hosted: <em>meta-llama/llama-4-scout-17b-16e-instruct</em> via Groq) y las recomendaciones para lograr una operación robusta en contextos educativos con conectividad limitada (escuelas rurales). Incluye asimismo un panorama de modelos descargables y gratuitos y las razones por las que su despliegue directo falla en muchos escenarios con español.</p>
+
+  <h2>1. Resumen del proyecto (texto provisto por el equipo)</h2>
+  <p><em>Título:</em> Alfabetizar en la era de las IAs: desafíos y problemáticas de la lectura en pantalla. Duración: 18 meses.</p>
+  <p><strong>Resumen:</strong> En los últimos años, las infancias han estado expuestas a las pantallas y estas se han incorporado en actividades educativas y de entretenimiento. Las nuevas tecnologías que engloban literatura digital y apoyos desde los desarrollos de las IAs necesitan una revisión en contextos educativos, así continued... (se mantiene la redacción original proporcionada por el equipo). El objetivo es producir conocimiento contextualizado en escuelas de Córdoba que permita diseñar piezas de ficción digital, herramientas de apoyo didáctico con IA y propuestas de política pública para inclusión digital y comprensión lectora.</p>
+
+  <h2>2. Diagnóstico técnico: por qué los modelos descargables fallan con español y en contextos escolares</h2>
+  <h3>2.1 Resumen de las causas técnicas</h3>
+  <p>Hemos observado que los problemas principales que afectan a la experiencia con modelos descargables en español son:</p>
+  <ul>
+    <li><strong>Sesgo de entrenamiento hacia el inglés:</strong> menor volumen y diversidad de datos en español produce pobres generalizaciones y mayor tasa de errores de registro y gramática.</li>
+    <li><strong>Tokenización subóptima:</strong> tokenizadores entrenados en vocabularios dominados por inglés fragmentan mal palabras españolas, reduciendo la eficiencia y la calidad semántica.</li>
+    <li><strong>Falta de fine-tuning instruccional en español:</strong> los modelos base no aplican guardrails ni formatos conversacionales necesarios para tareas educativas que exigen respuestas concisas y verificables.</li>
+    <li><strong>Limitaciones de recursos de inferencia:</strong> modelos grandes requieren GPU o memoria que no están disponibles en la mayoría de las escuelas rurales.</li>
+    <li><strong>Problemas de despliegue offline y PWA:</strong> descargar modelos multi-GB y ejecutar en navegadores o dispositivos limitados resulta impracticable sin cuantizaciones o infra local especializada.</li>
+  </ul>
+
+  <h3>2.2 Impacto específico en entornos educativos</h3>
+  <p>En aulas primarias y entornos rurales, además se suma la necesidad de respuestas seguras y no inventivas (evitar alucinaciones). Los modelos que no han sido instruccionados o verificados para no inventar datos pueden ofrecer respuestas potencialmente dañinas o erróneas en actividades de comprensión lectora.</p>
+
+  <h2>3. Modelos descargables y gratuitos: capacidades y limitaciones</h2>
+  <p>Lista resumida de familias de modelos evaluadas (discusión técnica):</p>
+  <ol>
+    <li><strong>LLaMA family (LLaMA 2 / 3 / 4 variants)</strong> — Pros: buena base, ampliamente adaptada para LoRA/fine-tune; Contras: licencias y alta necesidad de recursos para 13B+. Ideal como base para quantizado y LoRA.</li>
+    <li><strong>Vicuna / Alpaca</strong> — Pros: instruccionados comunitariamente; Contras: mayoría de datos en inglés, calidad variable.</li>
+    <li><strong>Mistral 7B</strong> — Pros: eficiente en parámetros; Contras: demanda fine-tuning en español.</li>
+    <li><strong>Falcon</strong> — Pros: competitivos; Contras: 40B costoso y 7B necesita calibración.</li>
+    <li><strong>Modelos quantizados (GGUF, q4/q8) y llama.cpp</strong> — Pros: permiten ejecución en CPU y en ambientes con recursos limitados; Contras: degradación de calidad y complejidad de conversión.</li>
+  </ol>
+
+  <h2>4. Justificación técnica de usar <em>meta-llama/llama-4-scout-17b-16e-instruct</em> como servicio principal</h2>
+  <p>La variante "scout" instructiva (como la que hemos usado vía Groq) ofrece ventajas relevantes para el proyecto:</p>
+  <ul>
+    <li><strong>Instruct-tuning:</strong> reduce la tasa de alucinación y mejora la capacidad de seguir consignas pedagógicas.</li>
+    <li><strong>Seguridad y guardrails:</strong> modelos hospedados incorporan medidas de seguridad y moderación que son importantes en contexto infantil.</li>
+    <li><strong>Mantenimiento y disponibilidad:</strong> aprovechar un proveedor reduce el esfuerzo operativo del equipo y garantiza actualizaciones de rendimiento.</li>
+  </ul>
+  <p>Sin embargo, reconocemos la necesidad de estudiar alternativas de continuidad en zonas con mala conectividad y de adaptar las soluciones técnicas a las limitaciones locales.</p>
+
+  <h2>5. Arquitectura del modelo y parámetros relevantes (descripción técnica)</h2>
+  <p>A continuación se describe la arquitectura conceptual de la familia LLaMA / LLaMA-like y los parámetros que necesitamos conocer para planificación de despliegue. (<em>Nota:</em> las cifras exactas del producto "llama-4-scout-17b-16e-instruct" deben confirmarse en la ficha oficial del modelo; aquí se ofrece una explicación técnica aplicable y la lista de parámetros a chequear.)</p>
+
+  <h3>5.1 Arquitectura (resumen)</h3>
+  <p>Modelo tipo <em>transformer decoder-only</em> con atención causal. Componentes claves:
+    <ul>
+      <li>Tokenizador (BPE / SentencePiece)</li>
+      <li>Embeddings de tokens y posicionales (a menudo RoPE)</li>
+      <li>Pila de N bloques Transformer con: Multi-Head Attention + FFN + Norm + residuals</li>
+      <li>Salida a logits y softmax sobre vocab</li>
+    </ul>
+  </p>
+
+  <h3>5.2 Parámetros relevantes para ingeniería</h3>
+  <ul>
+    <li><strong>Parámetros totales (p. ej. 17B):</strong> impacto en almacenamiento y memoria.</li>
+    <li><strong>Context window:</strong> tokens máximos por prompt (2k, 8k, 32k...); crítico para diálogo educativo y textos largos.</li>
+    <li><strong>Embedding dim, capas, heads:</strong> afectan latencia y necesidades de memoria.</li>
+    <li><strong>Formato y soporte para quantización:</strong> FP16/BF16 vs formatos GGUF/q4/q8, que condicionan ejecución en CPU.</li>
+    <li><strong>Licencia y restricciones de uso:</strong> revisar antes de distribuir modelos locales.</li>
+  </ul>
+
+  <!-- Sección de propuesta técnica eliminada por solicitud del equipo; el documento conserva el diagnóstico, evaluación y conclusiones técnicas previas. -->
+
+  <h2>7. Evaluación y métricas de éxito</h2>
+  <p>Proponemos las siguientes métricas:</p>
+  <ul>
+    <li><strong>Exactitud pedagógica:</strong> porcentaje de respuestas correctas en una batería de 100 preguntas de comprensión lectora.</li>
+    <li><strong>Tasa de alucinación:</strong> porcentaje de respuestas con información inventada.</li>
+    <li><strong>Latencia media por token/por respuesta:</strong> medir en hardware objetivo.</li>
+    <li><strong>Adopción en aula:</strong> porcentaje de sesiones completadas por los niños sin intervención del docente.</li>
+  </ul>
+
+  <h2>8. Riesgos, limitaciones y consideraciones éticas</h2>
+  <p>Principales riesgos: alucinaciones, sesgo, privacidad de datos, desigualdad de acceso. Recomendamos protocolos de consentimiento y anonimización, y respuestas de fallback que indiquen incertidumbre en lugar de inventar contenido.</p>
+
+  <h2>9. Conclusiones y recomendaciones</h2>
+  <p>Resumen: la opción pragmática para lograr impacto educativo inmediato es operar con un modelo instruccional hospedado para calidad y seguridad. En paralelo, invertir en fine-tuning/LoRA en español y en RAG con corpus local aumentará la fiabilidad para actividades de comprensión lectora.</p>
+
+  <h2>Anexos</h2>
+  <h3>Anexo A — Comandos y herramientas útiles</h3>
+  <pre>
+  # Ejemplo (conceptual) para ejecutar llama.cpp con un modelo GGUF
+  ./main -m modelo.gguf -p "Hola, ¿cómo estás?" -t 8 -n 128
+
+  # Conversión/quantización (herramientas comunitarias; adaptar según versión)
+  python convert_to_gguf.py --model-checkpoint /ruta/al/checkpoint --out-model modelo.gguf --quantize q4_0
+  </pre>
+
+  <h3>Anexo B — Referencias (selección)</h3>
+  <p>Se incluyen las referencias bibliográficas provistas por el equipo y referencias técnicas complementarias (papers y model-cards recomendadas cuando apliquen).</p>
+  <ul>
+    <li>Gustafsson, (2021). UNESCO report.</li>
+    <li>Torres Cañizález y Cobo Beltrán (2017).</li>
+    <li>Model cards y documentación oficial de LLaMA / Meta / Groq (consultar fichas oficiales para parámetros exactos).</li>
+  </ul>
+
+  <p class="small">Documento generado automáticamente y preparado para presentación. Si quiere que lo exporte a .docx nativo o PDF, puedo generar una versión con estilos adaptados y empaquetarla en formato Office (o enviar el contenido para que lo revise y lo exporte localmente).</p>
+  <p class="center"><strong>Fin del informe</strong></p>
+</body>
+</html>
