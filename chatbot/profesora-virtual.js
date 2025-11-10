@@ -77,9 +77,9 @@ const OBJETIVOS_POR_TURNO = [
 export class ProfesoraVirtual {
 	constructor() {
 		this.ia = new IAConversacional({
-			apiKey: CONFIG.GROQ_API_KEY,
 			modelo: CONFIG.MODELO,
-			backendUrl: CONFIG.BACKEND_URL
+			backendUrl: CONFIG.BACKEND_URL,
+			useBackend: CONFIG.USE_BACKEND !== false
 		});
 		this.historial = [];
 		this.turno = 0;
@@ -132,8 +132,8 @@ export class ProfesoraVirtual {
 		const contexto = this.buscarContexto(respuestaEstudiante);
 
 		try {
-			// Usar la IA real (Groq API) para respuestas inteligentes
-			console.log('🤖 Consultando a la IA...');
+			// Usar la IA Vertex (vía backend) para respuestas inteligentes
+			console.log('🤖 Consultando a la IA (Vertex)...');
 
 			let respuestaIA = await this.ia.generarRespuesta({
 				historial: this.historial,
@@ -178,11 +178,7 @@ export class ProfesoraVirtual {
 			return respuestaFinal;
 		} catch (error) {
 			// Mensajes específicos según tipo de error
-			if (error.message === 'RATE_LIMIT_EXCEEDED') {
-				console.error('⚠️ Límite de Groq API alcanzado, usando fallback');
-			} else {
-				console.error('❌ Error con IA, usando fallback:', error);
-			}
+			console.error('❌ Error con IA Vertex, usando fallback:', error);
 
 			// Fallback inteligente si la API falla
 			const respuestaIA = this.generarRespuestaConContexto(respuestaEstudiante, contexto);

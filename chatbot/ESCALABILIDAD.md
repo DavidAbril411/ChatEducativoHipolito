@@ -1,12 +1,14 @@
 # 📊 Escalabilidad y Límites
 
-## 🎯 Límites actuales (Plan FREE de Groq)
+## 🎯 Cuotas actuales (Vertex AI)
 
-### Llama 4 Scout 17B:
-- ⏱️ **30 requests/minuto**
-- 📅 **1,000 requests/día**
-- 🔢 **30,000 tokens/minuto**
-- 📈 **500,000 tokens/día**
+> Las cuotas exactas dependen del modelo y de tu proyecto de Google Cloud. Verificalas en **Cloud Console → Vertex AI → Quotas**.
+
+Valores típicos para `gemini-2.5-flash` en proyectos nuevos:
+- ⏱️ **60 solicitudes/minuto** por proyecto (se puede aumentar)
+- � **60 solicitudes/minuto** por usuario
+- 🔢 **3,000 tokens/minuto** de salida aproximados (fluye con la cuota de solicitudes)
+- 📈 Límite diario controlado por presupuesto/alertas
 
 ---
 
@@ -25,7 +27,7 @@ Duración: 5-10 minutos
 ```
 30 usuarios simultáneos
 Si todos envían 1 mensaje/minuto = 30 req/min
-⚠️ LÍMITE JUSTO - Funciona pero ajustado
+⚠️ Límite justo - monitorear uso en Vertex
 
 Con rate limiting de 3 segundos:
 30 usuarios × 1 mensaje cada 3 seg = 10 req/min
@@ -35,48 +37,48 @@ Con rate limiting de 3 segundos:
 ### Escenario 3: **Escuela completa (100+ alumnos/día)**
 ```
 100 alumnos × 10 mensajes = 1,000 requests/día
-✅ PERFECTO - Justo en el límite diario
+✅ Dentro de las cuotas estándar
 ```
 
 ### Escenario 4: **Uso masivo (1000+ usuarios/día)**
 ```
 1,000 usuarios × 10 mensajes = 10,000 requests/día
-❌ EXCEDE LÍMITE - Necesitas plan de pago o solución alternativa
+❌ Necesitás solicitar aumento de cuota o distribuir tráfico (multi-proyecto)
 ```
 
 ---
 
 ## 🛡️ Protecciones implementadas
 
-### 1. **Rate Limiting por usuario** ✅
+### 1. **Rate limiting por usuario** ✅
 - 3 segundos entre mensajes
 - Mensaje amigable: "Esperá X segundos..."
 - Evita spam involuntario
 
 ### 2. **Fallback inteligente** ✅
-- Si Groq falla → usa banco de conocimiento
-- El chat NUNCA deja de funcionar
-- Respuestas igual de buenas
+- Si Vertex devuelve error → usa banco de conocimiento
+- El chat nunca deja de responder
+- Respuestas coherentes con el cuento
 
-### 3. **Detección de error 429** ✅
-- Detecta cuando se excede límite
-- Activa fallback automáticamente
-- Log específico en consola
+### 3. **Logs detallados** ✅
+- Errores de Vertex (403, 429, 500) quedan registrados
+- Hint automático para scopes/roles cuando la respuesta es 403
 
 ---
 
 ## 💰 Costos si escalas
 
-### Plan de pago de Groq:
+Consulta precios vigentes: https://cloud.google.com/vertex-ai/pricing
+
+Referencia (enero 2025, región us-central1):
 ```
-$0.05 por 1M tokens de input
-$0.08 por 1M tokens de output
+gemini-2.5-flash
+ - Entrada: ~USD 0.00035 por 1K tokens
+ - Salida: ~USD 0.0005 por 1K tokens
 
-Ejemplo con 10,000 conversaciones/mes:
-10,000 conversaciones × 3,000 tokens = 30M tokens
-30M × $0.065 promedio = $1,950/mes
-
-⚠️ Puede ser caro para escala masiva
+Ejemplo mensual:
+ 10,000 conversaciones × 2,000 tokens totales ≈ 20M tokens
+  Costo estimado ≈ USD 10-12
 ```
 
 ---
@@ -90,25 +92,11 @@ Ejemplo con 10,000 conversaciones/mes:
 - Fallback inteligente
 - Tokens reducidos (180 max)
 
-Capacidad: ~100 usuarios/día
+Capacidad: ~150 usuarios/día
 Costo: $0
 ```
 
-### Opción 2: **Múltiples API keys** (GRATIS)
-```javascript
-// Rotar entre varias cuentas FREE
-const API_KEYS = [
-  'key1...', // 1,000 req/día
-  'key2...', // 1,000 req/día
-  'key3...', // 1,000 req/día
-];
-// Total: 3,000 req/día
-
-Capacidad: ~300 usuarios/día
-Costo: $0
-```
-
-### Opción 3: **Caché de respuestas** (GRATIS)
+### Opción 2: **Caché de respuestas** (GRATIS)
 ```javascript
 // Guardar preguntas frecuentes
 const cache = {
@@ -121,24 +109,19 @@ Capacidad: ~150 usuarios/día
 Costo: $0
 ```
 
-### Opción 4: **Plan de pago Groq** ($$$)
-```
-Límites ampliados
-~$50-200/mes según uso
-
-Capacidad: ilimitada prácticamente
-Costo: variable
-```
-
-### Opción 5: **Backend proxy** (Intermedio)
+### Opción 3: **Sharding por proyecto** (GRATIS)
 ```javascript
-// Tu backend controla rate limiting
-// Evita exponer API key
-// Mejor monitoreo
+// Distribuir usuarios por cuentas de servicio / proyectos GCP
+// Cada proyecto tiene su propia cuota
+// Requiere balancear tráfico en el backend
 
-Capacidad: la que necesites
+Capacidad: según la cantidad de proyectos
 Costo: hosting del backend
 ```
+
+### Opción 4: **Solicitar aumento de cuota** (Depende de Google)
+- Justificá el caso de uso educativo desde Cloud Console.
+- Google suele aprobar saltos a 300-600 req/min en pocos días.
 
 ---
 
@@ -146,11 +129,11 @@ Costo: hosting del backend
 
 | Caso de uso | Solución recomendada | Costo |
 |-------------|---------------------|-------|
-| **Desarrollo/testing** | Plan FREE actual | $0 |
-| **1 clase (30 alumnos)** | Rate limiting + FREE | $0 |
-| **Escuela (100-300 alumnos/día)** | Múltiples keys + caché | $0 |
-| **Distrital (1000+ alumnos/día)** | Plan de pago + backend | $50-200/mes |
-| **Nacional (10,000+ alumnos/día)** | Backend + caché + plan | $500+/mes |
+| **Desarrollo/testing** | Cuotas por defecto + rate limit | $0 |
+| **1 clase (30 alumnos)** | Cuotas por defecto + caché | $0 |
+| **Escuela (100-300 alumnos/día)** | Solicitar aumento moderado | $0 |
+| **Distrital (1000+ alumnos/día)** | Sharding por proyecto | $0-30 |
+| **Nacional (10,000+ alumnos/día)** | Aumento alto + presupuestos | $100+/mes |
 
 ---
 
@@ -159,21 +142,21 @@ Costo: hosting del backend
 ```
 ✅ Rate limiting implementado (3 seg)
 ✅ Fallback inteligente funcionando
-✅ Detección de error 429
-✅ Plan FREE de Groq activo
+✅ Logs de Vertex con hints de permisos
+✅ Backend propio (no hay claves expuestas)
 
-Capacidad actual: 30-50 usuarios/día cómodamente
-Costo: $0.00
+Capacidad actual: 60 req/min (quotas default Vertex)
+Costo: según consumo (ver cálculo arriba)
 ```
 
 ---
 
 ## 🔧 Próximos pasos si necesitas escalar
 
-1. **Monitorear uso** en dashboard de Groq
+1. **Monitorear uso** en Vertex AI → Quotas
 2. **Implementar caché** de respuestas comunes
-3. **Considerar múltiples API keys** si llegas a límite
-4. **Backend proxy** para uso masivo
-5. **Plan de pago** solo si realmente lo necesitas
+3. **Solicitar aumento de cuota** si superas 60 req/min
+4. **Distribuir tráfico** en varios proyectos si hace falta
+5. **Controlar presupuesto** con alertas en Cloud Billing
 
-**Por ahora, estás perfecto con el plan FREE** 🎉
+**Por ahora, las cuotas por defecto son suficientes para clases pequeñas** 🎉

@@ -2,45 +2,38 @@
 
 ## 🚀 Configuración Rápida (5 minutos)
 
-### Paso 1: Conseguir API Key GRATIS de Groq
+### Paso 1: Configurar el backend (Node + Vertex)
 
-1. **Andá a**: https://console.groq.com
-2. **Creá una cuenta** (solo email, sin tarjeta)
-3. **Ve a "API Keys"** en el menú izquierdo
-4. **Click en "Create API Key"**
-5. **Copiá la key** (empieza con `gsk_...`)
+1. Crea/descarga una **cuenta de servicio** en Google Cloud con el rol `Vertex AI User` o `Generative AI User`.
+2. Asegurate de habilitar la **Vertex AI API (Generative Language)** en el proyecto.
+3. Despliega el backend (`server/server.js`) en tu hosting preferido (Railway, Render, etc.).
+4. Define una variable de entorno `VERTEX_SERVICE_ACCOUNT` con el JSON completo de la cuenta de servicio.
+   - Alternativa: sube el JSON al servidor y apunta `GOOGLE_APPLICATION_CREDENTIALS` al archivo.
+5. Opcional: ajusta `VERTEX_MODEL` (por defecto `gemini-2.5-flash`) o `PORT`.
 
-### Paso 2: Configurar el proyecto (sin commitear secretos)
+### Paso 2: Configurar el frontend
 
-1. Abrí el archivo `config.js` (ya está preparado para NO incluir claves en el repo)
-2. Cargá tu API key en tiempo de ejecución de una de estas formas:
-   - En consola del navegador (para pruebas):
-     ```js
-     localStorage.setItem("GROQ_API_KEY", "gsk_TU_CLAVE_AQUI");
-     ```
-   - O definiendo una global antes de cargar el chat:
-     ```html
-     <script>
-       window.GROQ_API_KEY = "gsk_TU_CLAVE_AQUI";
-     </script>
-     ```
-   - O creando `chatbot/config.local.js` (ignorado por git) e inyectando:
-     ```html
-     <script>
-       window.CONFIG_LOCAL = { GROQ_API_KEY: "gsk_TU_CLAVE_AQUI" };
-     </script>
-     ```
+1. Abrí `chatbot/config.js` (no necesitas tocarlo para producción).
+2. Inyectá en tiempo de ejecución la URL del backend, por ejemplo en tu HTML antes de importar los scripts:
+   ```html
+   <script>
+     window.BACKEND_URL = "https://tu-backend.onrender.com";
+     window.VERTEX_MODEL = "gemini-2.5-flash"; // opcional
+   </script>
+   ```
+3. Carga `chat-maestra.html` en tu navegador o integrala en tu sitio.
 
-### Paso 3: ¡Listo!
+### Paso 3: Prueba rápida
 
-Abrí `chat-maestra.html` en tu navegador y empezá a chatear.
+1. Visita `<tu-backend>/api/health` y verificá que muestre `provider: "vertex"` y `hasCredentials: true`.
+2. Abrí `chat-maestra.html`, abre la consola y confirmá que la conexión indique *"Consultando a la IA (Vertex)..."*.
 
 ---
 
 ## ✨ Características
 
-- ✅ **IA real** usando Llama 3.1 (excelente en español)
-- ✅ **100% GRATIS** (30 requests/minuto)
+- ✅ **IA real** a través de Google Vertex AI (Gemini Flash)
+- ✅ **Sin exponer claves** en el navegador (todo pasa por el backend)
 - ✅ **Entiende contexto** de la conversación
 - ✅ **No repite preguntas**
 - ✅ **Respuestas naturales** y educativas
@@ -50,42 +43,42 @@ Abrí `chat-maestra.html` en tu navegador y empezá a chatear.
 
 ## 🎯 Modelos disponibles
 
-En `config.js` podés elegir:
+Define la variable de entorno `VERTEX_MODEL` o `window.VERTEX_MODEL` para personalizar el modelo de Vertex. Recomendados:
 
-- `llama-3.1-8b-instant` ⚡ Rápido (recomendado)
-- `llama-3.1-70b-versatile` 🧠 Más inteligente (más lento)
-- `gemma2-9b-it` 💡 Alternativa rápida
+- `gemini-2.5-flash` ⚡ rápido y económico
+- `gemini-2.0-flash-exp` 🧠 más contexto
+- `gemini-1.5-pro-latest` 🧠 si necesitas razonamiento profundo
 
 ---
 
 ## 🔒 Seguridad
 
-**⚠️ IMPORTANTE**: La API Key es privada. NO la subas a GitHub público. Este proyecto ya evita incluir la clave en el código fuente.
-
-Para producción, considerá mover llamadas a un backend propio o usar variables de entorno/secretos del entorno de despliegue.
+- Nunca expongas el JSON de la cuenta de servicio en el cliente.
+- Usa variables de entorno o el gestor de secretos de tu proveedor (Railway Secrets, etc.).
+- Mantén restringidas las credenciales al proyecto de Vertex que usas.
 
 ---
 
 ## 🆘 Problemas comunes
 
-### "API Key inválida"
+### 403 "Insufficient authentication scopes"
 
-- Revisá que copiaste bien la key completa
-- Asegurate que empiece con `gsk_`
+- Confirmá que la cuenta de servicio tiene el rol `Vertex AI User` (o `Generative AI User`).
+- Revisá que la API **Vertex AI API** esté habilitada.
 
-### "CORS error"
+### 401 "Request is missing required authentication credential"
 
-- La API de Groq permite CORS desde navegador
-- Si hay problemas, probá desde un servidor local
+- Verificá que `VERTEX_SERVICE_ACCOUNT` esté bien formateado (JSON válido).
+- Si usás `GOOGLE_APPLICATION_CREDENTIALS`, chequeá la ruta en el servidor.
 
 ### La IA no responde
 
-- Verificá tu conexión a internet
-- El fallback inteligente se activa automáticamente
+- Asegurate de que `window.BACKEND_URL` apunte al dominio correcto.
+- Revisá los logs del backend para más detalles (se registran los errores de Vertex).
 
 ---
 
 ## 📚 Más info
 
-- Docs de Groq: https://console.groq.com/docs
-- Límites gratuitos: 30 req/min, 14,400 req/día
+- Vertex AI Generative Language API: https://cloud.google.com/vertex-ai/generative-ai/docs
+- Precios y cuotas: https://cloud.google.com/vertex-ai/pricing

@@ -1,17 +1,16 @@
 /**
- * Motor de IA conversacional capaz de delegar en un backend proxy
- * (Vertex, Groq u otros proveedores) o en Groq directamente si se
- * proporciona una API key en el cliente. Por defecto intenta usar el
- * backend configurado para evitar exponer secretos en el navegador.
+ * Motor de IA conversacional que delega todas las llamadas en un backend
+ * Node/Express. Ese backend es el responsable de hablar con Vertex AI (Gemini).
+ * Mantener la llamada en el servidor evita exponer credenciales en el cliente.
  */
 
 export class IAConversacional {
 	constructor(configuracion = {}) {
 		this.config = {
-			// API Key de Groq configurada desde config.js
-			apiKey: configuracion.apiKey || 'TU_API_KEY_AQUI',
-			// Modelo: Llama 4 Scout 17B - última generación, excelente comprensión del español
-			modelo: configuracion.modelo || 'meta-llama/llama-4-scout-17b-16e-instruct',
+			backendUrl: configuracion.backendUrl || '',
+			useBackend: configuracion.useBackend !== false,
+			// Modelo por defecto: Gemini Flash
+			modelo: configuracion.modelo || 'gemini-2.5-flash',
 			maximoHistorial: 5,
 			maxTokens: 180,
 			temperatura: 0.7,
@@ -37,15 +36,14 @@ export class IAConversacional {
 		informar('Conectando con la profesora virtual... ✨');
 
 		try {
-			// Si usamos backend proxy, no necesitamos API key del cliente
-			const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
-
-			// Verificar que tenemos API key SOLO si NO usamos backend
-			if (!useBackend && (!this.config.apiKey || this.config.apiKey === 'TU_API_KEY_AQUI')) {
-				throw new Error('⚠️ Falta configurar la API Key de Groq. Conseguila gratis en https://console.groq.com');
+			if (!this.config.useBackend) {
+				throw new Error('⚠️ El modo sin backend ya no está disponible. Configurá BACKEND_URL para usar Vertex.');
 			}
 
-			// Test rápido de conexión
+			if (!this.config.backendUrl || this.config.backendUrl.length === 0) {
+				throw new Error('⚠️ Falta configurar BACKEND_URL con la URL del servidor Node que habla con Vertex.');
+			}
+
 			await this.testConexion();
 
 			this.listo = true;
@@ -58,19 +56,14 @@ export class IAConversacional {
 	}
 
 	async testConexion() {
-		const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
-		const url = useBackend ? `${this.config.backendUrl.replace(/\/$/, '')}/api/health` : 'https://api.groq.com/openai/v1/models';
-		const headers = useBackend ? { 'Content-Type': 'application/json' } : {
-			'Authorization': `Bearer ${this.config.apiKey}`,
-			'Content-Type': 'application/json'
-		};
+		const url = `${this.config.backendUrl.replace(/\/$/, '')}/api/health`;
 		const response = await fetch(url, {
 			method: 'GET',
-			headers
+			headers: { 'Content-Type': 'application/json' }
 		});
 
 		if (!response.ok) {
-			throw new Error('API Key inválida o problema de conexión');
+			throw new Error('Backend inaccesible: revisá la URL o las credenciales Vertex en el servidor');
 		}
 	}
 
@@ -82,22 +75,15 @@ export class IAConversacional {
 		// Construir mensajes para la API
 		const mensajes = this.construirMensajes({ historial, mensajeActual, contexto, ultimaPregunta });
 
-		const destino = this.config.backendUrl && this.config.backendUrl.length > 0
-			? `backend proxy (${this.config.backendUrl})`
-			: 'Groq API';
+		const destino = `backend Vertex (${this.config.backendUrl})`;
 		console.log(`=== Llamando a ${destino} ===`);
 		console.log('Mensajes:', JSON.stringify(mensajes, null, 2));
 
 		try {
-			const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
-			const url = useBackend ? `${this.config.backendUrl.replace(/\/$/, '')}/api/chat` : 'https://api.groq.com/openai/v1/chat/completions';
-			const headers = useBackend ? { 'Content-Type': 'application/json' } : {
-				'Authorization': `Bearer ${this.config.apiKey}`,
-				'Content-Type': 'application/json'
-			};
+			const url = `${this.config.backendUrl.replace(/\/$/, '')}/api/chat`;
 			const response = await fetch(url, {
 				method: 'POST',
-				headers,
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					model: this.config.modelo,
 					messages: mensajes,
@@ -109,16 +95,10 @@ export class IAConversacional {
 			});
 
 			if (!response.ok) {
-				// Manejo especial para error 429 (rate limit excedido)
-				if (response.status === 429) {
-					console.warn('⚠️ Rate limit excedido en Groq API');
-					throw new Error('RATE_LIMIT_EXCEEDED');
-				}
-
 				let detalle = 'Desconocido';
 				try {
 					const error = await response.json();
-					detalle = error.error?.message || JSON.stringify(error);
+					detalle = error.error?.message || error.message || JSON.stringify(error);
 				} catch {
 					// ignorado - mantenemos detalle por defecto
 				}
@@ -128,7 +108,7 @@ export class IAConversacional {
 			const data = await response.json();
 			const respuesta = data.choices[0]?.message?.content || '';
 
-			console.log(`✅ Respuesta recibida de ${useBackend ? 'backend proxy' : 'Groq'}:`, respuesta);
+			console.log('✅ Respuesta recibida de backend Vertex:', respuesta);
 
 			return this.limpiarRespuesta(respuesta);
 		} catch (error) {
