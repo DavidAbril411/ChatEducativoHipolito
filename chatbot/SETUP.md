@@ -26,7 +26,7 @@
 ### Paso 3: Prueba rápida
 
 1. Visita `<tu-backend>/api/health` y verificá que muestre `provider: "vertex"` y `hasCredentials: true`.
-2. Abrí `chat-maestra.html`, abre la consola y confirmá que la conexión indique *"Consultando a la IA (Vertex)..."*.
+2. Abrí `chat-maestra.html`, abre la consola y confirmá que la conexión indique _"Consultando a la IA (Vertex)..."_.
 
 ---
 
