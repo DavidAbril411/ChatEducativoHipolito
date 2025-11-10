@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // Vertex AI (Gemini) configuration
 const VERTEX_API_KEY = process.env.VERTEX_API_KEY || process.env.GOOGLE_API_KEY || process.env.VERTEX_KEY;
-const VERTEX_API_BASE = process.env.VERTEX_API_BASE || 'https://generativelanguage.googleapis.com/v1';
+const VERTEX_API_BASE = process.env.VERTEX_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
 const VERTEX_DEFAULT_MODEL = process.env.VERTEX_MODEL || 'gemini-2.5-flash';
 
 const vertexAuth = initialiseVertexAuth();
@@ -37,7 +37,7 @@ app.get('/api/health', (_req, res) => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { model, messages, temperature = 0.7, max_tokens = 180, top_p = 0.9, stream = false } = req.body || {};
+  const { model, messages, temperature = 0.4, max_tokens = 500, top_p = 0.7, stream = false } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'messages array is required' });
     }
@@ -49,7 +49,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const vertexModel = model || VERTEX_DEFAULT_MODEL;
-    const { contents, systemInstruction } = mapMessagesToVertex(messages);
+    const { contents, systemInstructionParts } = mapMessagesToVertex(messages);
     if (contents.length === 0) {
       return res.status(400).json({ error: 'Vertex requires at least one non-system message' });
     }
@@ -60,10 +60,21 @@ app.post('/api/chat', async (req, res) => {
         temperature,
         topP: top_p,
         maxOutputTokens: max_tokens
-      }
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HATE', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_SEXUAL', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_VIOLENCE', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_SELF_HARM', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_DANGEROUS', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+      ]
     };
-    if (systemInstruction) {
-      payload.systemInstruction = systemInstruction;
+    if (systemInstructionParts.length > 0) {
+      payload.systemInstruction = {
+        role: 'system',
+        parts: systemInstructionParts
+      };
     }
 
     let vertexUrl = `${VERTEX_API_BASE}/models/${encodeURIComponent(vertexModel)}:generateContent`;
@@ -99,7 +110,8 @@ app.post('/api/chat', async (req, res) => {
 
       return res.status(resp.status).json(json);
     }
-
+    
+    console.log('Vertex API raw response', JSON.stringify(json, null, 2))
     const reply = extractVertexReply(json);
     return res.json(reply);
   } catch (err) {
@@ -188,7 +200,7 @@ function loadServiceAccountCredentials() {
 
 function mapMessagesToVertex(messages = []) {
   const contents = [];
-  let systemInstruction;
+  const systemInstructionParts = [];
 
   for (const msg of messages) {
     if (!msg || !msg.role) {
@@ -197,10 +209,7 @@ function mapMessagesToVertex(messages = []) {
     const parts = normaliseMessageParts(msg.content);
 
     if (msg.role === 'system') {
-      if (!systemInstruction) {
-        systemInstruction = { role: 'system', parts: [] };
-      }
-      systemInstruction.parts.push(...parts);
+      systemInstructionParts.push(...parts);
       continue;
     }
 
@@ -210,7 +219,7 @@ function mapMessagesToVertex(messages = []) {
     });
   }
 
-  return { contents, systemInstruction };
+  return { contents, systemInstructionParts };
 }
 
 function normaliseMessageParts(content) {

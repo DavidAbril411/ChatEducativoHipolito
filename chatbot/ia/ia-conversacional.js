@@ -12,9 +12,9 @@ export class IAConversacional {
 			// Modelo por defecto: Gemini Flash
 			modelo: configuracion.modelo || 'gemini-2.5-flash',
 			maximoHistorial: 5,
-			maxTokens: 180,
-			temperatura: 0.7,
-			topP: 0.9,
+			maxTokens: 500,
+			temperatura: 0.4,
+			topP: 0.7,
 			persona: 'Eres Valentina, una profesora entusiasta y cariñosa que enseña el cuento de Hipólito a niños. Respondes de forma natural y breve (2-3 oraciones). IMPORTANTE: Solo usas información REAL del cuento proporcionado, NUNCA inventes detalles. Si no sabes algo, pregunta diferente. Siempre haces UNA pregunta concreta al final. Nunca repitas preguntas.',
 			...configuracion
 		};
