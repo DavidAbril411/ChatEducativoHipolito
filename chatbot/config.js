@@ -22,7 +22,7 @@ try {
 	if (typeof window !== 'undefined' && window.CONFIG_LOCAL) {
 		LOCAL_OVERRIDE = window.CONFIG_LOCAL;
 	}
-} catch {}
+} catch { }
 
 // También permitir usar una variable global o localStorage para no comitear secretos
 const keyFromWindow = typeof window !== 'undefined' && window.GROQ_API_KEY ? window.GROQ_API_KEY : undefined;

@@ -84,14 +84,14 @@ export class ProfesoraVirtual {
 		this.historial = [];
 		this.turno = 0;
 		this.sesionIniciada = false;
-		this.onEstado = () => {};
+		this.onEstado = () => { };
 		this.entradasContextoActual = [];
 		this.ultimaPregunta = null;
 		this.preguntasRealizadas = new Set(); // Track de TODAS las preguntas hechas
 	}
 
 	asignarNotificador(handler) {
-		this.onEstado = typeof handler === 'function' ? handler : () => {};
+		this.onEstado = typeof handler === 'function' ? handler : () => { };
 	}
 
 	async inicializar(opciones = {}) {
@@ -134,7 +134,7 @@ export class ProfesoraVirtual {
 		try {
 			// Usar la IA real (Groq API) para respuestas inteligentes
 			console.log('🤖 Consultando a la IA...');
-			
+
 			let respuestaIA = await this.ia.generarRespuesta({
 				historial: this.historial,
 				mensajeActual: respuestaEstudiante,
@@ -152,7 +152,7 @@ export class ProfesoraVirtual {
 				console.warn('⚠️ Respuesta defectuosa, usando fallback');
 				respuestaIA = this.generarRespuestaConContexto(respuestaEstudiante, contexto);
 			}
-			
+
 			// Verificar que NO repita preguntas
 			const preguntaEnRespuesta = this.extraerUltimaPregunta(respuestaIA);
 			if (preguntaEnRespuesta && this.yaHizoPreguntaSimilar(preguntaEnRespuesta)) {
@@ -165,7 +165,7 @@ export class ProfesoraVirtual {
 
 			const respuestaFinal = this.enriquecerRespuesta(respuestaIA, contexto);
 			this.registrarTurno('assistant', respuestaFinal);
-			
+
 			// Extraer y guardar la pregunta para evitar repeticiones
 			const pregunta = this.extraerUltimaPregunta(respuestaFinal);
 			if (pregunta) {
@@ -174,7 +174,7 @@ export class ProfesoraVirtual {
 				console.log('📝 Pregunta registrada:', pregunta);
 				console.log('📊 Total preguntas hechas:', this.preguntasRealizadas.size);
 			}
-			
+
 			return respuestaFinal;
 		} catch (error) {
 			// Mensajes específicos según tipo de error
@@ -183,19 +183,19 @@ export class ProfesoraVirtual {
 			} else {
 				console.error('❌ Error con IA, usando fallback:', error);
 			}
-			
+
 			// Fallback inteligente si la API falla
 			const respuestaIA = this.generarRespuestaConContexto(respuestaEstudiante, contexto);
 			const respuestaFinal = this.enriquecerRespuesta(respuestaIA, contexto);
 			this.registrarTurno('assistant', respuestaFinal);
-			
+
 			// Extraer y guardar la pregunta para evitar repeticiones
 			const pregunta = this.extraerUltimaPregunta(respuestaFinal);
 			if (pregunta) {
 				this.ultimaPregunta = pregunta;
 				this.preguntasRealizadas.add(this.normalizarPregunta(pregunta));
 			}
-			
+
 			return respuestaFinal;
 		}
 	}
@@ -247,7 +247,7 @@ export class ProfesoraVirtual {
 		}
 
 		const incluyePregunta = /\?/.test(respuesta);
-		
+
 		// Si no hay pregunta, añadimos una concreta.
 		if (!incluyePregunta) {
 			const preguntaConcreta = this.sugerirPreguntaConcreta();
@@ -305,12 +305,12 @@ export class ProfesoraVirtual {
 	generarRespuestaConContexto(mensajeUsuario, contexto) {
 		// Sistema inteligente que usa contexto real del cuento
 		console.log('💬 Generando respuesta inteligente para:', mensajeUsuario);
-		
+
 		const mensajeLimpio = this.normalizar(mensajeUsuario);
-		
+
 		// Detectar si el niño dice que NO sabe algo
 		const noSabe = /^(no|nose|nada|ni idea|que|qué|huh|eh)/.test(mensajeLimpio);
-		
+
 		if (noSabe) {
 			// El niño no sabe, le damos la respuesta del contexto
 			if (contexto && contexto.length > 20) {
@@ -321,7 +321,7 @@ export class ProfesoraVirtual {
 			const pregunta = this.sugerirPreguntaConcreta();
 			return `Está bien, sigamos adelante. ${pregunta}`;
 		}
-		
+
 		// Si tenemos contexto relacionado, lo usamos para confirmar
 		if (contexto && contexto.length > 20) {
 			// Extraer primera oración del contexto
@@ -336,7 +336,7 @@ export class ProfesoraVirtual {
 			const pregunta = this.sugerirPreguntaConcreta();
 			return `${respuestaConContexto} ${pregunta}`;
 		}
-		
+
 		// Respuestas generales si no hay contexto específico
 		const respuestasGenerales = [
 			`¡Me encanta que te acuerdes de Hipólito! Es un perro-dragón con alas blancas.`,
@@ -363,7 +363,7 @@ export class ProfesoraVirtual {
 			.toLowerCase()
 			.normalize('NFD')
 			.replace(/[^a-z\s]/g, '')
-			.replace(/\s+/g, ' ') 
+			.replace(/\s+/g, ' ')
 			.trim();
 	}
 	sugerirPreguntaConcreta() {
@@ -384,23 +384,23 @@ export class ProfesoraVirtual {
 			'¿Cómo era el día cuando apareció Hipólito',
 			'¿Qué comió Hipólito además del libro'
 		];
-		
+
 		// Filtrar preguntas que NO se han hecho aún
 		const preguntasNoRealizadas = banco.filter((pregunta) => {
 			return !this.yaHizoPreguntaSimilar(pregunta);
 		});
-		
+
 		console.log(`💡 Preguntas disponibles: ${preguntasNoRealizadas.length}/${banco.length}`);
-		
+
 		// Si quedan preguntas nuevas, usar esas
 		const lista = preguntasNoRealizadas.length > 0 ? preguntasNoRealizadas : banco;
-		
+
 		// Si se agotaron TODAS, reiniciar el set
 		if (preguntasNoRealizadas.length === 0) {
 			console.log('🔄 Reiniciando banco de preguntas');
 			this.preguntasRealizadas.clear();
 		}
-		
+
 		const eleccion = lista[Math.floor(Math.random() * lista.length)];
 		return eleccion;
 	}
@@ -427,23 +427,23 @@ export class ProfesoraVirtual {
 
 	yaHizoPreguntaSimilar(preguntaNueva) {
 		const normalizada = this.normalizarPregunta(preguntaNueva);
-		
+
 		// Buscar si ya existe una pregunta muy similar
 		for (const preguntaAnterior of this.preguntasRealizadas) {
 			// Calcular similitud: contar palabras en común
 			const palabrasNuevas = normalizada.split(' ').filter(p => p.length > 3);
 			const palabrasAnteriores = preguntaAnterior.split(' ').filter(p => p.length > 3);
-			
+
 			const palabrasComunes = palabrasNuevas.filter(p => palabrasAnteriores.includes(p));
 			const similitud = palabrasComunes.length / Math.max(palabrasNuevas.length, palabrasAnteriores.length);
-			
+
 			// Si hay más de 50% de palabras en común, es repetida
 			if (similitud > 0.5) {
 				console.log('⚠️ Pregunta similar ya realizada:', preguntaAnterior);
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 }

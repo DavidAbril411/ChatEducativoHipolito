@@ -1,7 +1,8 @@
 /**
- * Motor de IA conversacional usando Groq API.
- * Groq ofrece acceso GRATIS a modelos como Llama 3 que funcionan excelente en español.
- * Conseguí tu API key gratis en: https://console.groq.com
+ * Motor de IA conversacional capaz de delegar en un backend proxy
+ * (Vertex, Groq u otros proveedores) o en Groq directamente si se
+ * proporciona una API key en el cliente. Por defecto intenta usar el
+ * backend configurado para evitar exponer secretos en el navegador.
  */
 
 export class IAConversacional {
@@ -38,7 +39,7 @@ export class IAConversacional {
 		try {
 			// Si usamos backend proxy, no necesitamos API key del cliente
 			const useBackend = this.config.backendUrl && this.config.backendUrl.length > 0;
-			
+
 			// Verificar que tenemos API key SOLO si NO usamos backend
 			if (!useBackend && (!this.config.apiKey || this.config.apiKey === 'TU_API_KEY_AQUI')) {
 				throw new Error('⚠️ Falta configurar la API Key de Groq. Conseguila gratis en https://console.groq.com');
@@ -46,7 +47,7 @@ export class IAConversacional {
 
 			// Test rápido de conexión
 			await this.testConexion();
-			
+
 			this.listo = true;
 			informar('¡Profesora virtual lista! ✅');
 		} catch (error) {
@@ -81,7 +82,10 @@ export class IAConversacional {
 		// Construir mensajes para la API
 		const mensajes = this.construirMensajes({ historial, mensajeActual, contexto, ultimaPregunta });
 
-		console.log('=== Llamando a Groq API ===');
+		const destino = this.config.backendUrl && this.config.backendUrl.length > 0
+			? `backend proxy (${this.config.backendUrl})`
+			: 'Groq API';
+		console.log(`=== Llamando a ${destino} ===`);
 		console.log('Mensajes:', JSON.stringify(mensajes, null, 2));
 
 		try {
@@ -110,19 +114,25 @@ export class IAConversacional {
 					console.warn('⚠️ Rate limit excedido en Groq API');
 					throw new Error('RATE_LIMIT_EXCEEDED');
 				}
-				
-				const error = await response.json();
-				throw new Error(`Error de API: ${error.error?.message || 'Desconocido'}`);
+
+				let detalle = 'Desconocido';
+				try {
+					const error = await response.json();
+					detalle = error.error?.message || JSON.stringify(error);
+				} catch {
+					// ignorado - mantenemos detalle por defecto
+				}
+				throw new Error(`Error de API (${response.status}): ${detalle}`);
 			}
 
 			const data = await response.json();
 			const respuesta = data.choices[0]?.message?.content || '';
 
-			console.log('✅ Respuesta de Groq:', respuesta);
-			
+			console.log(`✅ Respuesta recibida de ${useBackend ? 'backend proxy' : 'Groq'}:`, respuesta);
+
 			return this.limpiarRespuesta(respuesta);
 		} catch (error) {
-			console.error('❌ Error llamando a Groq:', error);
+			console.error(`❌ Error llamando a ${destino}:`, error);
 			throw error;
 		}
 	}
@@ -132,7 +142,7 @@ export class IAConversacional {
 
 		// Sistema: instrucciones de comportamiento
 		let instruccionSistema = this.config.persona;
-		
+
 		if (contexto) {
 			instruccionSistema += `\n\nINFORMACIÓN DEL CUENTO:\n${contexto}`;
 		}

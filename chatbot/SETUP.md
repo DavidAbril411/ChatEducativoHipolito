@@ -14,22 +14,22 @@
 
 1. Abrí el archivo `config.js` (ya está preparado para NO incluir claves en el repo)
 2. Cargá tu API key en tiempo de ejecución de una de estas formas:
-	 - En consola del navegador (para pruebas):
-		 ```js
-		 localStorage.setItem('GROQ_API_KEY', 'gsk_TU_CLAVE_AQUI')
-		 ```
-	 - O definiendo una global antes de cargar el chat:
-		 ```html
-		 <script>
-			 window.GROQ_API_KEY = 'gsk_TU_CLAVE_AQUI';
-		 </script>
-		 ```
-	 - O creando `chatbot/config.local.js` (ignorado por git) e inyectando:
-		 ```html
-		 <script>
-			 window.CONFIG_LOCAL = { GROQ_API_KEY: 'gsk_TU_CLAVE_AQUI' };
-		 </script>
-		 ```
+   - En consola del navegador (para pruebas):
+     ```js
+     localStorage.setItem("GROQ_API_KEY", "gsk_TU_CLAVE_AQUI");
+     ```
+   - O definiendo una global antes de cargar el chat:
+     ```html
+     <script>
+       window.GROQ_API_KEY = "gsk_TU_CLAVE_AQUI";
+     </script>
+     ```
+   - O creando `chatbot/config.local.js` (ignorado por git) e inyectando:
+     ```html
+     <script>
+       window.CONFIG_LOCAL = { GROQ_API_KEY: "gsk_TU_CLAVE_AQUI" };
+     </script>
+     ```
 
 ### Paso 3: ¡Listo!
 
@@ -69,14 +69,17 @@ Para producción, considerá mover llamadas a un backend propio o usar variables
 ## 🆘 Problemas comunes
 
 ### "API Key inválida"
+
 - Revisá que copiaste bien la key completa
 - Asegurate que empiece con `gsk_`
 
 ### "CORS error"
+
 - La API de Groq permite CORS desde navegador
 - Si hay problemas, probá desde un servidor local
 
 ### La IA no responde
+
 - Verificá tu conexión a internet
 - El fallback inteligente se activa automáticamente
 
