@@ -65,6 +65,18 @@ export class IAConversacional {
 		if (!response.ok) {
 			throw new Error('Backend inaccesible: revisá la URL o las credenciales Vertex en el servidor');
 		}
+
+		try {
+			const estado = await response.json();
+			if (!estado?.hasCredentials) {
+				throw new Error('Backend sin credenciales Vertex. Configurá VERTEX_SERVICE_ACCOUNT o VERTEX_API_KEY en el servidor.');
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				throw error;
+			}
+			throw new Error('No se pudo validar la respuesta del backend Vertex.');
+		}
 	}
 
 	async generarRespuesta({ historial = [], mensajeActual = '', contexto = '', emocion = 'curiosa', objetivo = 'profundizar la comprensión del cuento', intencion = 'conversacion', ultimaPregunta = null }) {
