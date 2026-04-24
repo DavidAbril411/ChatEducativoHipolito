@@ -49,9 +49,8 @@
     </div>
 
     <script>
-      // Conectar frontend al backend en Railway (producción segura sin exponer API key al navegador)
-      window.BACKEND_URL =
-        "https://chateducativohipolitominiback-production.up.railway.app";
+      // Backend en mismo dominio — Caddy proxea /api/* al servidor Node
+      window.BACKEND_URL = "";
     </script>
 
     <script type="module">
