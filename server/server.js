@@ -4,12 +4,14 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VERTEX_API_KEY || process.env.GOOGLE_API_KEY;
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-flash-1.5-8b';
+const APP_REFERER = process.env.APP_REFERER || 'https://hipolito.abrilcodes.com';
+const APP_TITLE = process.env.APP_TITLE || 'Hipolito Chat Educativo';
 
-if (!GEMINI_API_KEY) {
-  console.warn('WARNING: GEMINI_API_KEY not set. Set it via environment variable.');
+if (!OPENROUTER_API_KEY) {
+  console.warn('WARNING: OPENROUTER_API_KEY not set. Set it via environment variable.');
 }
 
 app.use(cors({
@@ -23,65 +25,51 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     service: 'hipolito-chat-backend',
-    provider: 'gemini',
-    hasCredentials: Boolean(GEMINI_API_KEY),
-    model: GEMINI_DEFAULT_MODEL
+    provider: 'openrouter',
+    hasCredentials: Boolean(OPENROUTER_API_KEY),
+    model: OPENROUTER_MODEL
   });
 });
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { model, messages, temperature = 0.4, max_tokens = 500, top_p = 0.7 } = req.body || {};
+    const { messages, temperature = 0.4, max_tokens = 500, top_p = 0.7 } = req.body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'messages array is required' });
     }
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'Server missing GEMINI_API_KEY' });
-    }
-
-    const geminiModel = model || GEMINI_DEFAULT_MODEL;
-    const { contents, systemInstructionParts } = mapMessagesToGemini(messages);
-
-    if (contents.length === 0) {
-      return res.status(400).json({ error: 'Gemini requires at least one non-system message' });
+    if (!OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'Server missing OPENROUTER_API_KEY' });
     }
 
     const payload = {
-      contents,
-      generationConfig: {
-        temperature,
-        topP: top_p,
-        maxOutputTokens: max_tokens
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-      ]
+      model: OPENROUTER_MODEL,
+      messages,
+      temperature,
+      top_p,
+      max_tokens,
+      stream: false
     };
 
-    if (systemInstructionParts.length > 0) {
-      payload.systemInstruction = { role: 'user', parts: systemInstructionParts };
-    }
-
-    const url = `${GEMINI_API_BASE}/models/${encodeURIComponent(geminiModel)}:generateContent?key=${GEMINI_API_KEY}`;
-
-    const resp = await fetch(url, {
+    const resp = await fetch(OPENROUTER_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': APP_REFERER,
+        'X-Title': APP_TITLE
+      },
       body: JSON.stringify(payload)
     });
 
     const json = await resp.json();
 
     if (!resp.ok) {
-      console.error('Gemini API error:', resp.status, JSON.stringify(json));
+      console.error('OpenRouter API error:', resp.status, JSON.stringify(json));
       return res.status(resp.status).json(json);
     }
 
-    return res.json(extractReply(json, geminiModel));
+    return res.json(json);
   } catch (err) {
     console.error('Error in /api/chat:', err);
     res.status(500).json({ error: 'internal_error', detail: String(err) });
@@ -89,71 +77,5 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Hipolito chat backend listening on :${PORT} — model: ${GEMINI_DEFAULT_MODEL}`);
+  console.log(`Hipolito chat backend listening on :${PORT} — model: ${OPENROUTER_MODEL}`);
 });
-
-function mapMessagesToGemini(messages = []) {
-  const contents = [];
-  const systemInstructionParts = [];
-
-  for (const msg of messages) {
-    if (!msg?.role) continue;
-    const parts = normaliseContent(msg.content);
-
-    if (msg.role === 'system') {
-      systemInstructionParts.push(...parts);
-      continue;
-    }
-
-    contents.push({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: parts.length > 0 ? parts : [{ text: '' }]
-    });
-  }
-
-  return { contents, systemInstructionParts };
-}
-
-function normaliseContent(content) {
-  if (content == null) return [{ text: '' }];
-  if (typeof content === 'string') return [{ text: content }];
-  if (Array.isArray(content)) {
-    const parts = content.map(item => {
-      if (typeof item === 'string') return { text: item };
-      if (item?.type === 'text') return { text: item.text ?? '' };
-      if (typeof item?.content === 'string') return { text: item.content };
-      return null;
-    }).filter(Boolean);
-    return parts.length > 0 ? parts : [{ text: '' }];
-  }
-  if (typeof content === 'object') {
-    if (typeof content.text === 'string') return [{ text: content.text }];
-    if (typeof content.content === 'string') return [{ text: content.content }];
-  }
-  return [{ text: String(content) }];
-}
-
-function extractReply(json, model) {
-  const { candidates = [], usageMetadata } = json || {};
-  const first = candidates.find(c => c?.content?.parts?.length > 0);
-  const text = first
-    ? first.content.parts.map(p => p.text || '').join('').trim()
-    : '';
-
-  return {
-    id: `gemini-${Date.now()}`,
-    object: 'chat.completion',
-    created: Math.floor(Date.now() / 1000),
-    model,
-    choices: [{
-      index: 0,
-      message: { role: 'assistant', content: text },
-      finish_reason: first?.finishReason || 'stop'
-    }],
-    usage: usageMetadata ? {
-      prompt_tokens: usageMetadata.promptTokenCount,
-      completion_tokens: usageMetadata.candidatesTokenCount,
-      total_tokens: usageMetadata.totalTokenCount
-    } : undefined
-  };
-}
