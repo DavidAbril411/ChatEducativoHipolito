@@ -1,6 +1,6 @@
 /**
  * Motor de IA conversacional que delega todas las llamadas en un backend
- * Node/Express. Ese backend es el responsable de hablar con Vertex AI (Gemini).
+ * Node/Express. Ese backend habla con OpenRouter (Gemini Flash).
  * Mantener la llamada en el servidor evita exponer credenciales en el cliente.
  */
 
@@ -37,11 +37,11 @@ export class IAConversacional {
 
 		try {
 			if (!this.config.useBackend) {
-				throw new Error('⚠️ El modo sin backend ya no está disponible. Configurá BACKEND_URL para usar Vertex.');
+				throw new Error('⚠️ El modo sin backend ya no está disponible. Configurá BACKEND_URL.');
 			}
 
 			if (!this.config.backendUrl || this.config.backendUrl.length === 0) {
-				throw new Error('⚠️ Falta configurar BACKEND_URL con la URL del servidor Node que habla con Vertex.');
+				throw new Error('⚠️ Falta configurar BACKEND_URL con la URL del servidor Node.');
 			}
 
 			await this.testConexion();
@@ -63,19 +63,19 @@ export class IAConversacional {
 		});
 
 		if (!response.ok) {
-			throw new Error('Backend inaccesible: revisá la URL o las credenciales Vertex en el servidor');
+			throw new Error('Backend inaccesible: revisá la URL o las credenciales en el servidor');
 		}
 
 		try {
 			const estado = await response.json();
 			if (!estado?.hasCredentials) {
-				throw new Error('Backend sin credenciales Vertex. Configurá VERTEX_SERVICE_ACCOUNT o VERTEX_API_KEY en el servidor.');
+				throw new Error('Backend sin credenciales. Configurá OPENROUTER_API_KEY en el servidor.');
 			}
 		} catch (error) {
 			if (error instanceof Error) {
 				throw error;
 			}
-			throw new Error('No se pudo validar la respuesta del backend Vertex.');
+			throw new Error('No se pudo validar la respuesta del backend.');
 		}
 	}
 
